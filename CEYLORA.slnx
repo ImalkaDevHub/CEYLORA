@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CEYLORA.Api/CEYLORA.Api.csproj" />
+    <Project Path="src/CEYLORA.Application/CEYLORA.Application.csproj" />
+    <Project Path="src/CEYLORA.Domain/CEYLORA.Domain.csproj" />
+    <Project Path="src/CEYLORA.Infrastructure/CEYLORA.Infrastructure.csproj" />
+  </Folder>
+</Solution>

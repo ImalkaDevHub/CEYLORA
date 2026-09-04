@@ -41,6 +41,22 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+// Allow the React web app (different origin) to call this API from a browser
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowClients", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:3000",   // React dev server (adjust if you use Vite's 5173)
+                "http://localhost:5173"
+              )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+        // Flutter mobile doesn't send a browser Origin header, so it isn't blocked by CORS —
+        // this policy only matters for the React web app.
+    });
+});
+
 // Using built-in OpenAPI for .NET instead of Swashbuckle
 builder.Services.AddOpenApi();
 
@@ -54,9 +70,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowClients");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Health endpoint for deployment evidence (spec Section 14)
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 app.Run();

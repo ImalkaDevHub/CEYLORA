@@ -23,8 +23,12 @@ public class TripService : ITripService
             Id = Guid.NewGuid(),
             TravelerId = travelerId,
             Title = dto.Title,
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate,
+            // Npgsql refuses to write DateTime.Kind=Unspecified into a "timestamp with time zone"
+            // column, and that's exactly what an <input type="date"> sends (e.g. "2026-11-01",
+            // no offset). Trip dates are calendar dates with no inherent timezone, so treat them
+            // as UTC midnight rather than rejecting them.
+            StartDate = DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc),
+            EndDate = DateTime.SpecifyKind(dto.EndDate, DateTimeKind.Utc),
             Budget = dto.Budget,
             Status = TripStatus.Draft
         };

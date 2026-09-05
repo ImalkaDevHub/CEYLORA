@@ -1,11 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import LoginPage from './features/auth/LoginPage';
-
-function DashboardPlaceholder() {
-  const user = useSelector((state) => state.auth.user);
-  return <h2>Welcome, {user?.fullName} ({user?.role})</h2>;
-}
+import MyTripsPage from './features/trips/MyTripsPage';
 
 function ProtectedRoute({ children }) {
   const token = useSelector((state) => state.auth.token);
@@ -20,7 +16,7 @@ export default function App() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardPlaceholder />
+            <MyTripsPage />
           </ProtectedRoute>
         }
       />

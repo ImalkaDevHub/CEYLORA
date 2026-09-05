@@ -5,11 +5,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+// JsonStringEnumConverter: lets clients send/receive enums (TravelCategory, TripStatus, ...)
+// as their string names (e.g. "Nature") instead of only the raw numeric value System.Text.Json
+// defaults to — this is what request bodies like { "category": "Nature" } rely on.
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -18,6 +24,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Register the auth service for DI
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITripService, TripService>();
+builder.Services.AddScoped<IDestinationService, DestinationService>();
 
 // Configure JWT authentication
 var jwtKey = builder.Configuration["Jwt:Key"]!;

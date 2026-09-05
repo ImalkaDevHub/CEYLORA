@@ -10,6 +10,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<Trip> Trips => Set<Trip>();
+    public DbSet<Destination> Destinations => Set<Destination>();
+    public DbSet<Experience> Experiences => Set<Experience>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,5 +30,11 @@ public class ApplicationDbContext : DbContext
             .HasOne(t => t.Traveler)
             .WithMany()
             .HasForeignKey(t => t.TravelerId);
+
+        modelBuilder.Entity<Experience>()
+            .HasOne(e => e.Destination)
+            .WithMany(d => d.Experiences)
+            .HasForeignKey(e => e.DestinationId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

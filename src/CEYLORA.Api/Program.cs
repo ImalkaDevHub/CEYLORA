@@ -17,6 +17,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Register the auth service for DI
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITripService, TripService>();
 
 // Configure JWT authentication
 var jwtKey = builder.Configuration["Jwt:Key"]!;

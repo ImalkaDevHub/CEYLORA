@@ -9,6 +9,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
+    public DbSet<Trip> Trips => Set<Trip>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,5 +23,10 @@ public class ApplicationDbContext : DbContext
             new Role { Id = new Guid("2886700a-03e0-46c0-90cd-a6ae1e51b09d"), Name = "Operator" },
             new Role { Id = new Guid("546b4d97-9957-4d52-9682-bfd998c63b80"), Name = "Admin" }
         );
+
+        modelBuilder.Entity<Trip>()
+            .HasOne(t => t.Traveler)
+            .WithMany()
+            .HasForeignKey(t => t.TravelerId);
     }
 }

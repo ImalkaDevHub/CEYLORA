@@ -54,6 +54,44 @@ namespace CEYLORA.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Trip", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Budget")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TravelerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TravelerId");
+
+                    b.ToTable("Trips");
+                });
+
             modelBuilder.Entity("CEYLORA.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -80,6 +118,17 @@ namespace CEYLORA.Infrastructure.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Trip", b =>
+                {
+                    b.HasOne("CEYLORA.Domain.Entities.User", "Traveler")
+                        .WithMany()
+                        .HasForeignKey("TravelerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Traveler");
                 });
 
             modelBuilder.Entity("CEYLORA.Domain.Entities.User", b =>

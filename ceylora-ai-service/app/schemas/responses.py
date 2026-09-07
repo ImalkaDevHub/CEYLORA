@@ -22,8 +22,13 @@ class PlanResponse(BaseModel):
     days: int
     budget: float
     interests: list[str] = Field(default_factory=list)
+    # No max_length constraint — carries the full LLM-generated itinerary,
+    # which can run to several hundred words.
     plan: str = Field(..., description="Human-readable itinerary text.")
     generated_by: str = Field(
         default="planner_agent (stub)",
-        description="Marker so callers can tell this is not yet LLM-generated.",
+        description=(
+            "Which path produced `plan`: 'planner_agent (llm)', "
+            "'planner_agent (stub-fallback)', or 'planner_agent (stub)'."
+        ),
     )

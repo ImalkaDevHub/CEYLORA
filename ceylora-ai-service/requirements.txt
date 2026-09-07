@@ -1,0 +1,10 @@
+# CEYLORA AI Service — pinned dependencies
+# Thin vertical slice: FastAPI + LangGraph, no real LLM calls yet.
+# Versions verified against Python 3.14 (cp314 wheels available).
+
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+langgraph==1.2.11
+langchain-core==1.6.2
+pydantic==2.13.5
+python-dotenv==1.2.3

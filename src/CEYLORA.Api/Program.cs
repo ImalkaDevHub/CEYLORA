@@ -1,5 +1,6 @@
 using CEYLORA.Application.Interfaces;
 using CEYLORA.Infrastructure.Services;
+using CEYLORA.Infrastructure.Services.Http;
 using CEYLORA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,6 +26,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITripService, TripService>();
 builder.Services.AddScoped<IDestinationService, DestinationService>();
+
+// Typed HttpClient for the external ceylora-ai-service (FastAPI/LangGraph).
+// The client instance is DI-managed — AiPlanningClient never news up an HttpClient.
+builder.Services.AddHttpClient<IAiPlanningClient, AiPlanningClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["AiService:BaseUrl"] ?? "http://localhost:8001");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 // Configure JWT authentication
 var jwtKey = builder.Configuration["Jwt:Key"]!;

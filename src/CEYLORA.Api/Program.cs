@@ -26,6 +26,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITripService, TripService>();
 builder.Services.AddScoped<IDestinationService, DestinationService>();
+builder.Services.AddScoped<IAiWorkflowService, AiWorkflowService>();
 
 // Typed HttpClient for the external ceylora-ai-service (FastAPI/LangGraph).
 // The client instance is DI-managed — AiPlanningClient never news up an HttpClient.

@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.graph.workflow import run_workflow
+from app.graph.workflow import run_workflow_with_steps
 from app.schemas.requests import PlanRequest
-from app.schemas.responses import HealthResponse, PlanResponse
+from app.schemas.responses import HealthResponse, PlanResponse, WorkflowStep
 
 # Loads .env if present. Nothing in it is consumed yet (see .env.example).
 load_dotenv()
@@ -47,9 +47,10 @@ def plan(request: PlanRequest) -> PlanResponse:
     """Run the planner workflow for a trip request.
 
     The .NET API sends the goal/days/budget/interests it already holds; this
-    service runs the graph and returns an itinerary for .NET to persist.
+    service runs the graph and returns an itinerary — plus the per-agent step
+    records and the approval verdict — for .NET to persist.
     """
-    result = run_workflow(request.model_dump())
+    result, steps = run_workflow_with_steps(request.model_dump())
 
     return PlanResponse(
         goal=request.goal,
@@ -58,4 +59,7 @@ def plan(request: PlanRequest) -> PlanResponse:
         interests=request.interests,
         plan=result.get("plan", ""),
         generated_by=result.get("generated_by", "planner_agent (stub)"),
+        overall_status=result.get("overall_status", "Pending"),
+        requires_approval=bool(result.get("requires_approval", False)),
+        steps=[WorkflowStep(**step) for step in steps],
     )

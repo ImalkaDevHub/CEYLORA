@@ -22,6 +22,108 @@ namespace CEYLORA.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CEYLORA.Domain.Entities.AIWorkflow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Budget")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Days")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FinalPlan")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Goal")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Interests")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OverallStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("TravelerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TripId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovalStatus");
+
+                    b.HasIndex("ApprovedByUserId");
+
+                    b.HasIndex("TravelerId");
+
+                    b.HasIndex("TripId");
+
+                    b.ToTable("AIWorkflows");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.AIWorkflowStep", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AIWorkflowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AgentName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OutputSummary")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AIWorkflowId");
+
+                    b.ToTable("AIWorkflowSteps");
+                });
+
             modelBuilder.Entity("CEYLORA.Domain.Entities.Destination", b =>
                 {
                     b.Property<Guid>("Id")
@@ -197,6 +299,42 @@ namespace CEYLORA.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("CEYLORA.Domain.Entities.AIWorkflow", b =>
+                {
+                    b.HasOne("CEYLORA.Domain.Entities.User", "ApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CEYLORA.Domain.Entities.User", "Traveler")
+                        .WithMany()
+                        .HasForeignKey("TravelerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CEYLORA.Domain.Entities.Trip", "Trip")
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ApprovedByUser");
+
+                    b.Navigation("Traveler");
+
+                    b.Navigation("Trip");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.AIWorkflowStep", b =>
+                {
+                    b.HasOne("CEYLORA.Domain.Entities.AIWorkflow", "AIWorkflow")
+                        .WithMany("Steps")
+                        .HasForeignKey("AIWorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AIWorkflow");
+                });
+
             modelBuilder.Entity("CEYLORA.Domain.Entities.Experience", b =>
                 {
                     b.HasOne("CEYLORA.Domain.Entities.Destination", "Destination")
@@ -228,6 +366,11 @@ namespace CEYLORA.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.AIWorkflow", b =>
+                {
+                    b.Navigation("Steps");
                 });
 
             modelBuilder.Entity("CEYLORA.Domain.Entities.Destination", b =>

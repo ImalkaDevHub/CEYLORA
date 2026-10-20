@@ -10,6 +10,11 @@ String formatDate(DateTime d) {
   return '${u.day} ${_months[u.month - 1]} ${u.year}';
 }
 
+/// Formats a date the user picked in a date picker. Pickers return local
+/// midnight, so use the local fields: [formatDate] converts to UTC, which shows
+/// the previous day east of UTC (e.g. Sri Lanka, UTC+5:30).
+String formatPickedDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
+
 /// yyyy-MM-dd, the same shape an HTML date input sends to the API.
 String toApiDate(DateTime d) =>
     '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';

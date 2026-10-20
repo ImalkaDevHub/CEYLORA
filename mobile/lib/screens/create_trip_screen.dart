@@ -199,7 +199,7 @@ class _DateField extends StatelessWidget {
           border: const OutlineInputBorder(),
           suffixIcon: const Icon(Icons.calendar_today, size: 18),
         ),
-        child: Text(value == null ? 'Select' : formatDate(value!)),
+        child: Text(value == null ? 'Select' : formatPickedDate(value!)),
       ),
     );
   }

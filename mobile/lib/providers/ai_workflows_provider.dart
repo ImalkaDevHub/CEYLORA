@@ -51,6 +51,7 @@ class AiWorkflowsProvider extends ChangeNotifier {
     required int days,
     required double budget,
     required List<String> interests,
+    DateTime? startDate,
   }) async {
     if (_starting) return (null, null);
     final epoch = _epoch;
@@ -62,6 +63,7 @@ class AiWorkflowsProvider extends ChangeNotifier {
         days: days,
         budget: budget,
         interests: interests,
+        startDate: startDate,
       );
       if (epoch == _epoch) {
         _items = _newestFirst([workflow, ..._items]);

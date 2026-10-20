@@ -1,4 +1,5 @@
 import '../models/ai_workflow.dart';
+import '../utils/format.dart';
 import 'api_client.dart';
 
 class AiWorkflowService {
@@ -31,6 +32,7 @@ class AiWorkflowService {
     required int days,
     required double budget,
     required List<String> interests,
+    DateTime? startDate,
   }) async {
     final dynamic data;
     try {
@@ -41,6 +43,8 @@ class AiWorkflowService {
           'days': days,
           'budget': budget,
           'interests': interests,
+          // Optional: the API starts the trip tomorrow when this is left out.
+          if (startDate != null) 'startDate': toApiDate(startDate),
         },
         timeout: startTimeout,
       );

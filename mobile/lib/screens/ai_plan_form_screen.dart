@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../models/ai_workflow.dart';
 import '../providers/ai_workflows_provider.dart';
+import '../providers/trips_provider.dart';
+import '../utils/format.dart';
 import 'ai_plan_detail_screen.dart';
 
 /// Request form for a new AI plan. [prefill] seeds the fields when planning
@@ -21,6 +23,7 @@ class _AiPlanFormScreenState extends State<AiPlanFormScreen> {
   late final TextEditingController _days;
   late final TextEditingController _budget;
   late final Set<String> _interests;
+  DateTime? _startDate;
   bool _busy = false;
   String? _error;
 
@@ -47,6 +50,17 @@ class _AiPlanFormScreenState extends State<AiPlanFormScreen> {
     super.dispose();
   }
 
+  Future<void> _pickStartDate() async {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? today.add(const Duration(days: 1)),
+      firstDate: today,
+      lastDate: DateTime(today.year + 2, today.month, today.day),
+    );
+    if (picked != null && mounted) setState(() => _startDate = picked);
+  }
+
   Future<void> _submit() async {
     if (_busy || !_formKey.currentState!.validate()) return;
 
@@ -54,15 +68,19 @@ class _AiPlanFormScreenState extends State<AiPlanFormScreen> {
       _busy = true;
       _error = null;
     });
+    final trips = context.read<TripsProvider>();
     final (workflow, error) = await context.read<AiWorkflowsProvider>().start(
           goal: _goal.text.trim(),
           days: int.parse(_days.text.trim()),
           budget: double.parse(_budget.text.trim()),
           // Keep the chips' display order for a stable request body.
           interests: [for (final i in aiInterests) if (_interests.contains(i)) i],
+          startDate: _startDate,
         );
     if (!mounted) return;
     if (workflow != null) {
+      // Starting a plan also creates its trip, so refresh My trips.
+      trips.load();
       Navigator.of(context).pushReplacement(MaterialPageRoute(
           builder: (_) => AiPlanDetailScreen(workflowId: workflow.id)));
     } else {
@@ -161,6 +179,28 @@ class _AiPlanFormScreenState extends State<AiPlanFormScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: _busy ? null : _pickStartDate,
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Start date (optional)',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: _startDate == null
+                            ? const Icon(Icons.calendar_today, size: 18)
+                            : IconButton(
+                                tooltip: 'Clear start date',
+                                icon: const Icon(Icons.close),
+                                onPressed: _busy
+                                    ? null
+                                    : () => setState(() => _startDate = null),
+                              ),
+                      ),
+                      child: Text(_startDate == null
+                          ? 'Tomorrow'
+                          : formatPickedDate(_startDate!)),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Text('Interests (optional)',

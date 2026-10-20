@@ -110,6 +110,9 @@ class AiWorkflowStep {
 /// Mirrors CEYLORA.Application.DTOs.AiWorkflows.AiWorkflowResponseDto.
 class AiWorkflow {
   final String id;
+
+  /// The Trip created for this plan (null for plans made before trips were linked).
+  final String? tripId;
   final String goal;
   final int days;
   final double budget;
@@ -122,6 +125,7 @@ class AiWorkflow {
 
   const AiWorkflow({
     required this.id,
+    this.tripId,
     required this.goal,
     required this.days,
     required this.budget,
@@ -135,6 +139,7 @@ class AiWorkflow {
 
   factory AiWorkflow.fromJson(Map<String, dynamic> json) => AiWorkflow(
         id: json['id'] as String,
+        tripId: json['tripId'] as String?,
         goal: json['goal'] as String,
         days: (json['days'] as num).toInt(),
         budget: (json['budget'] as num).toDouble(),

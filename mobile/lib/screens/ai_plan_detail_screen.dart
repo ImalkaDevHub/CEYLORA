@@ -5,9 +5,12 @@ import 'package:provider/provider.dart';
 
 import '../models/ai_workflow.dart';
 import '../providers/ai_workflows_provider.dart';
+import '../providers/trips_provider.dart';
 import '../utils/format.dart';
 import '../widgets/ai_outcome_chip.dart';
+import '../widgets/status_chip.dart';
 import 'ai_plan_form_screen.dart';
+import 'trip_detail_screen.dart';
 
 class AiPlanDetailScreen extends StatefulWidget {
   final String workflowId;
@@ -22,6 +25,7 @@ class AiPlanDetailScreen extends StatefulWidget {
 
 class _AiPlanDetailScreenState extends State<AiPlanDetailScreen> {
   Timer? _poll;
+  AiOutcome? _lastOutcome;
 
   @override
   void dispose() {
@@ -41,6 +45,34 @@ class _AiPlanDetailScreenState extends State<AiPlanDetailScreen> {
       _poll!.cancel();
       _poll = null;
     }
+  }
+
+  /// An operator's decision changes the linked trip (confirmed or cancelled), so
+  /// reload My trips once the plan stops waiting.
+  void _syncTrips(AiOutcome outcome) {
+    final was = _lastOutcome;
+    _lastOutcome = outcome;
+    if (was == AiOutcome.awaitingApproval &&
+        outcome != AiOutcome.awaitingApproval) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.read<TripsProvider>().load();
+      });
+    }
+  }
+
+  Future<void> _openTrip(String tripId) async {
+    final trips = context.read<TripsProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    if (trips.byId(tripId) == null) await trips.load();
+    if (!mounted) return;
+    if (trips.byId(tripId) == null) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Could not open the trip. Try again from My trips.')));
+      return;
+    }
+    navigator.push(MaterialPageRoute(
+        builder: (_) => TripDetailScreen(tripId: tripId)));
   }
 
   Future<void> _pullToRefresh() async {
@@ -64,6 +96,11 @@ class _AiPlanDetailScreenState extends State<AiPlanDetailScreen> {
 
     final outcome = workflow.outcome;
     _syncPolling(outcome == AiOutcome.awaitingApproval);
+    _syncTrips(outcome);
+    final tripId = workflow.tripId;
+    final trip = tripId == null
+        ? null
+        : context.watch<TripsProvider>().byId(tripId);
     final theme = Theme.of(context);
     final days = workflow.days;
     final plan = workflow.finalPlan?.trim();
@@ -78,6 +115,13 @@ class _AiPlanDetailScreenState extends State<AiPlanDetailScreen> {
             padding: const EdgeInsets.all(24),
             children: [
               _OutcomeBanner(outcome),
+              if (tripId != null) ...[
+                const SizedBox(height: 12),
+                _TripCard(
+                  status: trip?.status,
+                  onTap: () => _openTrip(tripId),
+                ),
+              ],
               const SizedBox(height: 24),
               Text('Your request', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
@@ -127,6 +171,33 @@ class _AiPlanDetailScreenState extends State<AiPlanDetailScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The trip created for this plan; its status follows the operator's decision.
+class _TripCard extends StatelessWidget {
+  final String? status; // null until My trips has loaded the trip
+  final VoidCallback onTap;
+  const _TripCard({required this.status, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        leading: const Icon(Icons.luggage_outlined),
+        title: const Text('Your trip'),
+        subtitle: const Text('Tap to view this trip'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (status != null) StatusChip(status!),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
+        onTap: onTap,
       ),
     );
   }

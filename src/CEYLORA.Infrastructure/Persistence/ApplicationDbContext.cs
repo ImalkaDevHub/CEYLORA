@@ -16,6 +16,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<Experience> Experiences => Set<Experience>();
     public DbSet<AIWorkflow> AIWorkflows => Set<AIWorkflow>();
     public DbSet<AIWorkflowStep> AIWorkflowSteps => Set<AIWorkflowStep>();
+    public DbSet<Accommodation> Accommodations => Set<Accommodation>();
+    public DbSet<Availability> Availabilities => Set<Availability>();
+    public DbSet<Booking> Bookings => Set<Booking>();
+    public DbSet<BookingItem> BookingItems => Set<BookingItem>();
+    public DbSet<Review> Reviews => Set<Review>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,6 +47,133 @@ public class ApplicationDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         ConfigureAiWorkflow(modelBuilder);
+        ConfigureBookingOperations(modelBuilder);
+    }
+
+    private static void ConfigureBookingOperations(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Accommodation>(entity =>
+        {
+            entity.Property(a => a.Name).HasMaxLength(150);
+            entity.Property(a => a.Description).HasMaxLength(2000);
+            entity.Property(a => a.PricePerNight).HasPrecision(18, 2);
+            entity.Property(a => a.Type).HasConversion<string>().HasMaxLength(32);
+
+            // Destinations are only ever soft-deleted, so a stay must never cascade away with one.
+            entity.HasOne(a => a.Destination)
+                .WithMany()
+                .HasForeignKey(a => a.DestinationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(a => a.DestinationId);
+            entity.HasIndex(a => new { a.IsActive, a.PricePerNight });
+
+            // A destination does not list two stays with the same name.
+            entity.HasIndex(a => new { a.DestinationId, a.Name }).IsUnique();
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Accommodations_PricePerNight", "\"PricePerNight\" >= 0");
+                t.HasCheckConstraint("CK_Accommodations_MaxGuestsPerRoom", "\"MaxGuestsPerRoom\" > 0");
+            });
+        });
+
+        modelBuilder.Entity<Availability>(entity =>
+        {
+            entity.Ignore(a => a.AvailableRooms);
+
+            // One inventory row per accommodation per night.
+            entity.HasIndex(a => new { a.AccommodationId, a.Date }).IsUnique();
+
+            // Optimistic concurrency, see Availability.Version.
+            entity.Property(a => a.Version).IsConcurrencyToken();
+
+            entity.HasOne(a => a.Accommodation)
+                .WithMany(x => x.Availabilities)
+                .HasForeignKey(a => a.AccommodationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // The database refuses overbooking even if application code ever gets it wrong.
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Availabilities_Counts",
+                    "\"BookedRooms\" >= 0 AND \"TotalRooms\" >= 0 AND \"BookedRooms\" <= \"TotalRooms\"");
+            });
+        });
+
+        modelBuilder.Entity<Booking>(entity =>
+        {
+            entity.Property(b => b.Status).HasConversion<string>().HasMaxLength(32);
+            entity.Property(b => b.TotalAmount).HasPrecision(18, 2);
+            entity.Property(b => b.Notes).HasMaxLength(500);
+
+            entity.HasOne(b => b.Traveler)
+                .WithMany()
+                .HasForeignKey(b => b.TravelerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(b => b.Trip)
+                .WithMany()
+                .HasForeignKey(b => b.TripId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // "My bookings" and the operator's filter-by-status screen read on these.
+            entity.HasIndex(b => new { b.TravelerId, b.CreatedAt });
+            entity.HasIndex(b => b.Status);
+            entity.HasIndex(b => b.TripId);
+        });
+
+        modelBuilder.Entity<BookingItem>(entity =>
+        {
+            entity.Ignore(i => i.Nights);
+            entity.Property(i => i.NightlyRate).HasPrecision(18, 2);
+            entity.Property(i => i.Subtotal).HasPrecision(18, 2);
+
+            entity.HasOne(i => i.Booking)
+                .WithMany(b => b.Items)
+                .HasForeignKey(i => i.BookingId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(i => i.Accommodation)
+                .WithMany()
+                .HasForeignKey(i => i.AccommodationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(i => i.BookingId);
+            entity.HasIndex(i => i.AccommodationId);
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_BookingItems_Dates", "\"CheckOut\" > \"CheckIn\"");
+                t.HasCheckConstraint("CK_BookingItems_Counts", "\"Rooms\" > 0 AND \"Guests\" > 0");
+            });
+        });
+
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.Property(r => r.Comment).HasMaxLength(1000);
+
+            entity.HasOne(r => r.Accommodation)
+                .WithMany(a => a.Reviews)
+                .HasForeignKey(r => r.AccommodationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(r => r.Traveler)
+                .WithMany()
+                .HasForeignKey(r => r.TravelerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(r => r.Booking)
+                .WithMany()
+                .HasForeignKey(r => r.BookingId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // A traveler reviews each place once.
+            entity.HasIndex(r => new { r.AccommodationId, r.TravelerId }).IsUnique();
+            entity.HasIndex(r => new { r.AccommodationId, r.CreatedAt });
+
+            entity.ToTable(t => t.HasCheckConstraint("CK_Reviews_Rating", "\"Rating\" BETWEEN 1 AND 5"));
+        });
     }
 
     private static void ConfigureAiWorkflow(ModelBuilder modelBuilder)

@@ -124,6 +124,187 @@ namespace CEYLORA.Infrastructure.Migrations
                     b.ToTable("AIWorkflowSteps");
                 });
 
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Accommodation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("DestinationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxGuestsPerRoom")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<decimal>("PricePerNight")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationId");
+
+                    b.HasIndex("DestinationId", "Name")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive", "PricePerNight");
+
+                    b.ToTable("Accommodations", t =>
+                        {
+                            t.HasCheckConstraint("CK_Accommodations_MaxGuestsPerRoom", "\"MaxGuestsPerRoom\" > 0");
+
+                            t.HasCheckConstraint("CK_Accommodations_PricePerNight", "\"PricePerNight\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Availability", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccommodationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BookedRooms")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("TotalRooms")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccommodationId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("Availabilities", t =>
+                        {
+                            t.HasCheckConstraint("CK_Availabilities_Counts", "\"BookedRooms\" >= 0 AND \"TotalRooms\" >= 0 AND \"BookedRooms\" <= \"TotalRooms\"");
+                        });
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Booking", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("TravelerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TripId");
+
+                    b.HasIndex("TravelerId", "CreatedAt");
+
+                    b.ToTable("Bookings");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.BookingItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccommodationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("CheckIn")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("CheckOut")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Guests")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("NightlyRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("Rooms")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccommodationId");
+
+                    b.HasIndex("BookingId");
+
+                    b.ToTable("BookingItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_BookingItems_Counts", "\"Rooms\" > 0 AND \"Guests\" > 0");
+
+                            t.HasCheckConstraint("CK_BookingItems_Dates", "\"CheckOut\" > \"CheckIn\"");
+                        });
+                });
+
             modelBuilder.Entity("CEYLORA.Domain.Entities.Destination", b =>
                 {
                     b.Property<Guid>("Id")
@@ -199,6 +380,49 @@ namespace CEYLORA.Infrastructure.Migrations
                     b.HasIndex("DestinationId");
 
                     b.ToTable("Experiences");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Review", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccommodationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TravelerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("TravelerId");
+
+                    b.HasIndex("AccommodationId", "CreatedAt");
+
+                    b.HasIndex("AccommodationId", "TravelerId")
+                        .IsUnique();
+
+                    b.ToTable("Reviews", t =>
+                        {
+                            t.HasCheckConstraint("CK_Reviews_Rating", "\"Rating\" BETWEEN 1 AND 5");
+                        });
                 });
 
             modelBuilder.Entity("CEYLORA.Domain.Entities.Role", b =>
@@ -335,6 +559,66 @@ namespace CEYLORA.Infrastructure.Migrations
                     b.Navigation("AIWorkflow");
                 });
 
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Accommodation", b =>
+                {
+                    b.HasOne("CEYLORA.Domain.Entities.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Destination");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Availability", b =>
+                {
+                    b.HasOne("CEYLORA.Domain.Entities.Accommodation", "Accommodation")
+                        .WithMany("Availabilities")
+                        .HasForeignKey("AccommodationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Accommodation");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Booking", b =>
+                {
+                    b.HasOne("CEYLORA.Domain.Entities.User", "Traveler")
+                        .WithMany()
+                        .HasForeignKey("TravelerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CEYLORA.Domain.Entities.Trip", "Trip")
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Traveler");
+
+                    b.Navigation("Trip");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.BookingItem", b =>
+                {
+                    b.HasOne("CEYLORA.Domain.Entities.Accommodation", "Accommodation")
+                        .WithMany()
+                        .HasForeignKey("AccommodationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CEYLORA.Domain.Entities.Booking", "Booking")
+                        .WithMany("Items")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Accommodation");
+
+                    b.Navigation("Booking");
+                });
+
             modelBuilder.Entity("CEYLORA.Domain.Entities.Experience", b =>
                 {
                     b.HasOne("CEYLORA.Domain.Entities.Destination", "Destination")
@@ -344,6 +628,33 @@ namespace CEYLORA.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Destination");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Review", b =>
+                {
+                    b.HasOne("CEYLORA.Domain.Entities.Accommodation", "Accommodation")
+                        .WithMany("Reviews")
+                        .HasForeignKey("AccommodationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CEYLORA.Domain.Entities.Booking", "Booking")
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CEYLORA.Domain.Entities.User", "Traveler")
+                        .WithMany()
+                        .HasForeignKey("TravelerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Accommodation");
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Traveler");
                 });
 
             modelBuilder.Entity("CEYLORA.Domain.Entities.Trip", b =>
@@ -371,6 +682,18 @@ namespace CEYLORA.Infrastructure.Migrations
             modelBuilder.Entity("CEYLORA.Domain.Entities.AIWorkflow", b =>
                 {
                     b.Navigation("Steps");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Accommodation", b =>
+                {
+                    b.Navigation("Availabilities");
+
+                    b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("CEYLORA.Domain.Entities.Booking", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("CEYLORA.Domain.Entities.Destination", b =>

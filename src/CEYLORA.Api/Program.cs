@@ -27,6 +27,12 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITripService, TripService>();
 builder.Services.AddScoped<IDestinationService, DestinationService>();
 builder.Services.AddScoped<IAiWorkflowService, AiWorkflowService>();
+builder.Services.AddScoped<IAccommodationService, AccommodationService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+
+// "Today" for booking rules comes from here, so tests can pin the date.
+builder.Services.AddSingleton(TimeProvider.System);
 
 // Typed HttpClient for the external ceylora-ai-service (FastAPI/LangGraph).
 // The client instance is DI-managed — AiPlanningClient never news up an HttpClient.
@@ -97,5 +103,17 @@ app.MapControllers();
 
 // Health endpoint for deployment evidence (spec Section 14)
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
+// Opt-in sample catalogue (destinations, stays and room inventory) for demos:
+//   dotnet user-secrets set "Seed:DemoData" "true" --project src/CEYLORA.Api
+// It only ever fills an empty accommodation table and never changes existing rows.
+if (app.Configuration.GetValue<bool>("Seed:DemoData"))
+{
+    using var scope = app.Services.CreateScope();
+    var created = await DemoDataSeeder.SeedAsync(
+        scope.ServiceProvider.GetRequiredService<ApplicationDbContext>(),
+        scope.ServiceProvider.GetRequiredService<TimeProvider>());
+    app.Logger.LogInformation("Demo data seeder added {Count} accommodations.", created);
+}
 
 app.Run();

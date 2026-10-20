@@ -1,0 +1,128 @@
+name: CI
+
+# Builds and tests every part of CEYLORA on each push and pull request.
+# Three independent jobs (so one failing does not hide the others), plus one
+# "CI passed" job that is the single check to require before merging.
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+# A newer push to the same branch/PR makes the older run pointless.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  backend:
+    name: Backend (.NET build and tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore CEYLORA.slnx
+
+      - name: Build (Release)
+        run: dotnet build CEYLORA.slnx --configuration Release --no-restore
+
+      # The tests need no database: they use an in-memory provider and in-memory SQLite.
+      - name: Test
+        run: >
+          dotnet test CEYLORA.slnx --configuration Release --no-build
+          --logger "trx;LogFileName=backend-tests.trx"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: TestResults/*.trx
+          if-no-files-found: ignore
+
+  web:
+    name: Web (lint, tests, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  mobile:
+    name: Mobile (Flutter analyze and tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.1
+          cache: true
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+  ci-passed:
+    name: CI passed
+    needs: [backend, web, mobile]
+    # Runs even when a job failed, so the gate reports a clear failure instead of "skipped".
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check every job succeeded
+        run: |
+          echo "backend: ${{ needs.backend.result }}"
+          echo "web:     ${{ needs.web.result }}"
+          echo "mobile:  ${{ needs.mobile.result }}"
+          if [ "${{ needs.backend.result }}" != "success" ] || \
+             [ "${{ needs.web.result }}" != "success" ] || \
+             [ "${{ needs.mobile.result }}" != "success" ]; then
+            echo "One or more jobs did not succeed."
+            exit 1
+          fi

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/ai_workflows_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/destinations_provider.dart';
 import '../providers/trips_provider.dart';
+import 'ai_plans_screen.dart';
 import 'destinations_screen.dart';
 import 'home_screen.dart';
 import 'trips_screen.dart';
 
 /// Signed-in frame: app bar with sign-out and bottom navigation.
-/// More tabs (AI planner) slot into [_tabs].
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -24,6 +25,8 @@ class _MainShellState extends State<MainShell> {
     _Tab('Home', Icons.home_outlined, Icons.home, HomeScreen()),
     _Tab('Explore', Icons.explore_outlined, Icons.explore, DestinationsScreen()),
     _Tab('My trips', Icons.luggage_outlined, Icons.luggage, TripsScreen()),
+    _Tab('AI plans', Icons.auto_awesome_outlined, Icons.auto_awesome,
+        AiPlansScreen()),
   ];
 
   @override
@@ -34,6 +37,7 @@ class _MainShellState extends State<MainShell> {
       if (!mounted) return;
       context.read<TripsProvider>().load();
       context.read<DestinationsProvider>().load();
+      context.read<AiWorkflowsProvider>().load();
     });
   }
 

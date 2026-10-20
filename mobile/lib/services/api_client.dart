@@ -32,13 +32,17 @@ class ApiClient {
 
   void setToken(String? token) => _token = token;
 
-  Future<dynamic> post(String path, Map<String, dynamic> body) =>
-      _send('POST', path, body: body);
+  static const defaultTimeout = Duration(seconds: 15);
 
-  Future<dynamic> get(String path) => _send('GET', path);
+  Future<dynamic> post(String path, Map<String, dynamic> body,
+          {Duration timeout = defaultTimeout}) =>
+      _send('POST', path, body: body, timeout: timeout);
+
+  Future<dynamic> get(String path, {Duration timeout = defaultTimeout}) =>
+      _send('GET', path, timeout: timeout);
 
   Future<dynamic> _send(String method, String path,
-      {Map<String, dynamic>? body}) async {
+      {Map<String, dynamic>? body, required Duration timeout}) async {
     final uri = Uri.parse('$baseUrl$path');
     final headers = <String, String>{
       'Accept': 'application/json',
@@ -51,7 +55,7 @@ class ApiClient {
       final request = method == 'POST'
           ? _http.post(uri, headers: headers, body: jsonEncode(body))
           : _http.get(uri, headers: headers);
-      response = await request.timeout(const Duration(seconds: 15));
+      response = await request.timeout(timeout);
     } on TimeoutException {
       throw const ApiException('The server took too long to respond.');
     } on SocketException {

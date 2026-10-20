@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/accommodations_provider.dart';
 import '../providers/ai_workflows_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/bookings_provider.dart';
 import '../providers/destinations_provider.dart';
 import '../providers/trips_provider.dart';
+import 'accommodations_screen.dart';
 import 'ai_plans_screen.dart';
 import 'destinations_screen.dart';
 import 'home_screen.dart';
@@ -24,6 +27,7 @@ class _MainShellState extends State<MainShell> {
   static const _tabs = <_Tab>[
     _Tab('Home', Icons.home_outlined, Icons.home, HomeScreen()),
     _Tab('Explore', Icons.explore_outlined, Icons.explore, DestinationsScreen()),
+    _Tab('Stays', Icons.hotel_outlined, Icons.hotel, AccommodationsScreen()),
     _Tab('My trips', Icons.luggage_outlined, Icons.luggage, TripsScreen()),
     _Tab('AI plans', Icons.auto_awesome_outlined, Icons.auto_awesome,
         AiPlansScreen()),
@@ -37,6 +41,8 @@ class _MainShellState extends State<MainShell> {
       if (!mounted) return;
       context.read<TripsProvider>().load();
       context.read<DestinationsProvider>().load();
+      context.read<AccommodationsProvider>().load();
+      context.read<BookingsProvider>().load();
       context.read<AiWorkflowsProvider>().load();
     });
   }

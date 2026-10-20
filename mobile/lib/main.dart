@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'providers/accommodations_provider.dart';
 import 'providers/ai_workflows_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/bookings_provider.dart';
 import 'providers/destinations_provider.dart';
+import 'providers/reviews_provider.dart';
 import 'providers/trip_photos_provider.dart';
 import 'providers/trips_provider.dart';
 import 'screens/main_shell.dart';
@@ -13,6 +16,7 @@ import 'services/api_client.dart';
 import 'services/auth_service.dart';
 import 'services/destination_service.dart';
 import 'services/photo_picker.dart';
+import 'services/stay_services.dart';
 import 'services/token_storage.dart';
 import 'services/trip_photo_store.dart';
 import 'services/trip_service.dart';
@@ -76,6 +80,27 @@ class CeyloraApp extends StatelessWidget {
           update: (_, auth, photos) {
             if (auth.status != AuthStatus.signedIn) photos!.clear();
             return photos!;
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, AccommodationsProvider>(
+          create: (_) => AccommodationsProvider(AccommodationService(api)),
+          update: (_, auth, stays) {
+            if (auth.status != AuthStatus.signedIn) stays!.clear();
+            return stays!;
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, BookingsProvider>(
+          create: (_) => BookingsProvider(BookingService(api)),
+          update: (_, auth, bookings) {
+            if (auth.status != AuthStatus.signedIn) bookings!.clear();
+            return bookings!;
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, ReviewsProvider>(
+          create: (_) => ReviewsProvider(ReviewService(api)),
+          update: (_, auth, reviews) {
+            if (auth.status != AuthStatus.signedIn) reviews!.clear();
+            return reviews!;
           },
         ),
         ChangeNotifierProxyProvider<AuthProvider, AiWorkflowsProvider>(

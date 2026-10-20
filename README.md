@@ -42,12 +42,46 @@ and never changes existing rows):
 dotnet user-secrets set "Seed:DemoData" "true" --project src/CEYLORA.Api
 ```
 
+## API errors
+Every error from the API has the same JSON shape, so a client only ever has to show `message`:
+
+```json
+{ "message": "Enter a valid email address." }
+```
+
+A request that fails validation also lists every problem by field (names are camelCase, nested ones
+look like `items[0].rooms`):
+
+```json
+{
+  "message": "Password must be 8 to 72 characters.",
+  "errors": {
+    "email": ["Enter a valid email address."],
+    "password": ["Password must be 8 to 72 characters."]
+  }
+}
+```
+
+| Status | When |
+|---|---|
+| 400 | the request is not valid (validation, a broken body, an unknown enum value, a bad date) |
+| 401 | no token, or an invalid/expired one |
+| 403 | signed in but not allowed (wrong role, or someone else's record) |
+| 404 | not found |
+| 409 | clashes with the current state (email taken, sold out, already reviewed) |
+| 503 | the AI planner is unavailable |
+| 500 | anything unexpected: a generic message only, the details go to the server log |
+
+New accounts need a valid email and a password of 8 to 72 characters with a letter and a number;
+emails are case-insensitive. Trips cannot start in the past (yesterday UTC is allowed for time zones
+ahead of UTC), last longer than a year, or start more than five years away.
+
 ## Testing and CI
 Every part has its own tests, and none of them needs a database or the AI service:
 
 | Part | Command (run from the repo root) | Tests |
 |---|---|---|
-| Backend (.NET) | `dotnet test CEYLORA.slnx` | xUnit on an in-memory provider and in-memory SQLite (real transactions and constraints) |
+| Backend (.NET) | `dotnet test CEYLORA.slnx` | xUnit: services on an in-memory provider and in-memory SQLite (real transactions and constraints), plus the whole API over HTTP in memory (routing, JWT, roles, validation, error shape) |
 | Web (React) | `cd web && npm ci && npm run lint && npm test && npm run build` | Vitest + Testing Library |
 | Mobile (Flutter) | `cd mobile && flutter pub get && flutter analyze && flutter test` | unit and widget tests with a fake API |
 

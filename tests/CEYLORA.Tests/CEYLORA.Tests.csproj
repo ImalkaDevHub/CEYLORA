@@ -12,6 +12,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- Starts the whole API in memory so tests can call it over HTTP (routing, auth, validation, JSON). -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.11" />
     <!-- A real relational engine, for transaction and constraint behaviour the in-memory provider cannot show. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
@@ -24,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\CEYLORA.Api\CEYLORA.Api.csproj" />
     <ProjectReference Include="..\..\src\CEYLORA.Application\CEYLORA.Application.csproj" />
     <ProjectReference Include="..\..\src\CEYLORA.Domain\CEYLORA.Domain.csproj" />
     <ProjectReference Include="..\..\src\CEYLORA.Infrastructure\CEYLORA.Infrastructure.csproj" />

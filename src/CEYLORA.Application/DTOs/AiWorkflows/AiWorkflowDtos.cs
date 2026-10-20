@@ -1,11 +1,26 @@
+using System.ComponentModel.DataAnnotations;
+using CEYLORA.Application.Validation;
+
 namespace CEYLORA.Application.DTOs.AiWorkflows;
 
 /// <summary>Body for POST /api/ai/workflows — what the traveler wants planned.</summary>
-public class StartWorkflowDto
+public class StartWorkflowDto : IValidatableObject
 {
+    public const int MaxInterests = 10;
+    public const int MaxInterestLength = 30;
+
+    [Required(ErrorMessage = "Describe the trip you want.")]
+    [StringLength(1000, MinimumLength = 3, ErrorMessage = "Trip goal must be 3 to 1000 characters.")]
     public string Goal { get; set; } = string.Empty;
+
+    // The AI service accepts 1..60 days; checking here gives a clear 400 instead of a failed call.
+    [Range(1, 60, ErrorMessage = "Days must be between 1 and 60.")]
     public int Days { get; set; }
+
+    [Range(typeof(decimal), "0", "1000000000", ErrorMessage = "Budget must be between 0 and 1,000,000,000 LKR.")]
     public decimal Budget { get; set; }
+
+    [MaxLength(MaxInterests, ErrorMessage = "Choose at most 10 interests.")]
     public List<string> Interests { get; set; } = new();
 
     /// <summary>
@@ -13,6 +28,31 @@ public class StartWorkflowDto
     /// omitted, so existing clients that don't send it keep working.
     /// </summary>
     public DateTime? StartDate { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Interests is not null)
+        {
+            foreach (var interest in Interests)
+            {
+                if (string.IsNullOrWhiteSpace(interest) || interest.Length > MaxInterestLength)
+                {
+                    yield return new ValidationResult(
+                        $"Each interest must be 1 to {MaxInterestLength} characters.", new[] { nameof(Interests) });
+                    break;
+                }
+            }
+        }
+
+        if (StartDate is { } start)
+        {
+            if (start.Date < ValidationRules.EarliestStart(validationContext))
+                yield return new ValidationResult("Start date cannot be in the past.", new[] { nameof(StartDate) });
+            else if (start.Date > ValidationRules.LatestStart(validationContext))
+                yield return new ValidationResult(
+                    $"Start date is too far ahead (at most {ValidationRules.MaxYearsAhead} years).", new[] { nameof(StartDate) });
+        }
+    }
 }
 
 /// <summary>One agent's execution record — the observability trail for a run.</summary>

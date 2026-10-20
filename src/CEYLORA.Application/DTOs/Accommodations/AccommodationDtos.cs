@@ -14,6 +14,7 @@ public class CreateAccommodationDto
     [StringLength(2000)]
     public string Description { get; set; } = string.Empty;
 
+    [EnumDataType(typeof(AccommodationType), ErrorMessage = "Choose a valid accommodation type.")]
     public AccommodationType Type { get; set; }
 
     /// <summary>LKR per room per night.</summary>

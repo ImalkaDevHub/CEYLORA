@@ -1,3 +1,4 @@
+using CEYLORA.Api.Errors;
 using CEYLORA.Application.Interfaces;
 using CEYLORA.Infrastructure.Services;
 using CEYLORA.Infrastructure.Services.Http;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +18,22 @@ var builder = WebApplication.CreateBuilder(args);
 // defaults to — this is what request bodies like { "category": "Nature" } rely on.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
+    // A request that fails validation answers { message, errors } instead of the stock
+    // ProblemDetails, so every error in the API has the same "message" to show.
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+            new BadRequestObjectResult(ApiErrors.ValidationBody(context.ModelState));
+
+        // Do not turn bare 404/415/... results into ProblemDetails; the status-code middleware
+        // below gives them the standard { message } body instead.
+        options.SuppressMapClientErrors = true;
+    });
+
+// Unhandled exceptions become the same JSON error (details go to the log, never to the client).
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 // Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -86,6 +103,17 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+// First in the pipeline so it also covers everything after it.
+app.UseExceptionHandler();
+
+// 401, 403, 404, 405... that would otherwise leave an empty body get the standard JSON error.
+app.UseStatusCodePages(async context =>
+{
+    var response = context.HttpContext.Response;
+    response.ContentType = "application/json";
+    await response.WriteAsJsonAsync(new { message = ApiErrors.MessageFor(response.StatusCode) });
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -117,3 +145,6 @@ if (app.Configuration.GetValue<bool>("Seed:DemoData"))
 }
 
 app.Run();
+
+// Lets the integration tests start the API in memory (WebApplicationFactory<Program>).
+public partial class Program { }

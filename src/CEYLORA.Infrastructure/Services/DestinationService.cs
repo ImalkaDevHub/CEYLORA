@@ -17,10 +17,11 @@ public class DestinationService : IDestinationService
 
         if (!string.IsNullOrWhiteSpace(q.Search))
         {
-            // Postgres LIKE (what .Contains() translates to) is case-sensitive, so a plain
-            // Contains() would miss "Ella" on a search for "ella" — use ILIKE instead.
-            var pattern = $"%{q.Search}%";
-            query = query.Where(d => EF.Functions.ILike(d.Name, pattern) || EF.Functions.ILike(d.Region, pattern));
+            // Postgres LIKE (what .Contains() translates to) is case-sensitive, so compare in lower
+            // case: "ella" must find "Ella". Written this way (not ILIKE) it runs on any database,
+            // and % and _ typed by a user are treated as plain characters.
+            var term = q.Search.Trim().ToLower();
+            query = query.Where(d => d.Name.ToLower().Contains(term) || d.Region.ToLower().Contains(term));
         }
 
         if (q.Category.HasValue)

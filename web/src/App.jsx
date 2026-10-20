@@ -5,6 +5,8 @@ import MyTripsPage from './features/trips/MyTripsPage';
 import PlanTripPage from './features/aiWorkflows/PlanTripPage';
 import ApprovalsQueuePage from './features/aiWorkflows/ApprovalsQueuePage';
 import DestinationsPage from './features/destinations/DestinationsPage';
+import AccommodationsPage from './features/accommodations/AccommodationsPage';
+import BookingsPage from './features/bookings/BookingsPage';
 import { logout } from './features/auth/authSlice';
 
 function ProtectedRoute({ allowedRoles, children }) {
@@ -27,6 +29,8 @@ function NavBar() {
         <>
           <Link to="/approvals" style={{ marginRight: 12 }}>Approvals</Link>
           <Link to="/destinations" style={{ marginRight: 12 }}>Destinations</Link>
+          <Link to="/accommodations" style={{ marginRight: 12 }}>Accommodations</Link>
+          <Link to="/bookings" style={{ marginRight: 12 }}>Bookings</Link>
         </>
       )}
       <span style={{ marginRight: 12 }}>{user?.fullName} ({user?.role})</span>
@@ -53,6 +57,14 @@ export default function App() {
         <Route
           path="/destinations"
           element={<ProtectedRoute allowedRoles={['Operator', 'Admin']}><DestinationsPage /></ProtectedRoute>}
+        />
+        <Route
+          path="/accommodations"
+          element={<ProtectedRoute allowedRoles={['Operator', 'Admin']}><AccommodationsPage /></ProtectedRoute>}
+        />
+        <Route
+          path="/bookings"
+          element={<ProtectedRoute allowedRoles={['Operator', 'Admin']}><BookingsPage /></ProtectedRoute>}
         />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/trips_provider.dart';
 import '../utils/format.dart';
 import '../widgets/status_chip.dart';
+import '../widgets/trip_photos_section.dart';
 
 class TripDetailScreen extends StatelessWidget {
   final String tripId;
@@ -86,6 +87,8 @@ class TripDetailScreen extends StatelessWidget {
                 'This trip is ${trip.status.toLowerCase()} and can no longer be edited.',
                 style: theme.textTheme.bodyMedium,
               ),
+            const SizedBox(height: 32),
+            TripPhotosSection(tripId: trip.id),
           ],
         ),
       ),

@@ -13,6 +13,7 @@ import 'package:mobile/providers/trips_provider.dart' show LoadState;
 import 'package:mobile/services/api_client.dart';
 import 'package:mobile/services/destination_service.dart';
 import 'package:mobile/services/token_storage.dart';
+import 'support/fake_photos.dart';
 
 class _MemoryStore implements SessionStore {
   AuthSession? saved;
@@ -303,7 +304,12 @@ void main() {
     Future<void> pumpExplore(WidgetTester tester, MockClient client) async {
       final api = ApiClient(httpClient: client, baseUrl: 'http://test');
       await tester
-          .pumpWidget(CeyloraApp(api: api, store: _MemoryStore(_session())));
+          .pumpWidget(CeyloraApp(
+          api: api,
+          store: _MemoryStore(_session()),
+          photoStore: FakeTripPhotoStore(),
+          photoPicker: FakePhotoPicker(),
+        ));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Explore').last);
       await tester.pumpAndSettle();

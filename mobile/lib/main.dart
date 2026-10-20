@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'providers/ai_workflows_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/destinations_provider.dart';
+import 'providers/trip_photos_provider.dart';
 import 'providers/trips_provider.dart';
 import 'screens/main_shell.dart';
 import 'screens/login_screen.dart';
@@ -11,7 +12,9 @@ import 'services/ai_workflow_service.dart';
 import 'services/api_client.dart';
 import 'services/auth_service.dart';
 import 'services/destination_service.dart';
+import 'services/photo_picker.dart';
 import 'services/token_storage.dart';
+import 'services/trip_photo_store.dart';
 import 'services/trip_service.dart';
 
 void main() {
@@ -26,7 +29,17 @@ class CeyloraApp extends StatelessWidget {
   final ApiClient api;
   final SessionStore store;
 
-  const CeyloraApp({super.key, required this.api, required this.store});
+  /// Camera/gallery and on-device photo storage; tests pass fakes.
+  final PhotoPicker? photoPicker;
+  final TripPhotoStore? photoStore;
+
+  const CeyloraApp({
+    super.key,
+    required this.api,
+    required this.store,
+    this.photoPicker,
+    this.photoStore,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +66,16 @@ class CeyloraApp extends StatelessWidget {
           update: (_, auth, destinations) {
             if (auth.status != AuthStatus.signedIn) destinations!.clear();
             return destinations!;
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, TripPhotosProvider>(
+          create: (_) => TripPhotosProvider(
+            photoStore ?? FileTripPhotoStore(),
+            photoPicker ?? ImagePickerPhotoPicker(),
+          ),
+          update: (_, auth, photos) {
+            if (auth.status != AuthStatus.signedIn) photos!.clear();
+            return photos!;
           },
         ),
         ChangeNotifierProxyProvider<AuthProvider, AiWorkflowsProvider>(

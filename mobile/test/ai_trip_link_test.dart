@@ -11,6 +11,7 @@ import 'package:mobile/services/ai_workflow_service.dart';
 import 'package:mobile/services/api_client.dart';
 import 'package:mobile/services/token_storage.dart';
 import 'package:mobile/utils/format.dart';
+import 'support/fake_photos.dart';
 
 /// An AI plan now has a Trip behind it (created by the API, status follows the
 /// operator's decision). These tests cover the optional start date and the
@@ -132,7 +133,12 @@ void main() {
           httpClient: MockClient((req) async => _json(<dynamic>[], 200)),
           baseUrl: 'http://test');
       await tester
-          .pumpWidget(CeyloraApp(api: api, store: _MemoryStore(_session())));
+          .pumpWidget(CeyloraApp(
+          api: api,
+          store: _MemoryStore(_session()),
+          photoStore: FakeTripPhotoStore(),
+          photoPicker: FakePhotoPicker(),
+        ));
       await tester.pumpAndSettle();
       await tester.tap(find.text('My trips').last);
       await tester.pumpAndSettle();
@@ -192,7 +198,12 @@ void main() {
     Future<void> pumpSignedIn(WidgetTester tester) async {
       final api = ApiClient(httpClient: backend(), baseUrl: 'http://test');
       await tester
-          .pumpWidget(CeyloraApp(api: api, store: _MemoryStore(_session())));
+          .pumpWidget(CeyloraApp(
+          api: api,
+          store: _MemoryStore(_session()),
+          photoStore: FakeTripPhotoStore(),
+          photoPicker: FakePhotoPicker(),
+        ));
       await tester.pumpAndSettle();
     }
 

@@ -41,7 +41,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: DateTime(now.year - 1),
+      firstDate: DateUtils.dateOnly(now), // the API refuses trips that start in the past
       lastDate: DateTime(now.year + 5),
     );
     if (picked == null) return;

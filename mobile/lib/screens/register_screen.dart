@@ -3,6 +3,17 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 
+/// The same password rule the API applies to new accounts: 8 to 72 characters with at least
+/// one letter and one number. Returns a message, or null when the password is fine.
+String? passwordProblem(String? value) {
+  final password = value ?? '';
+  if (password.length < 8 || password.length > 72) return 'Use 8 to 72 characters';
+  if (!RegExp(r'[A-Za-z]').hasMatch(password) || !RegExp(r'\d').hasMatch(password)) {
+    return 'Include at least one letter and one number';
+  }
+  return null;
+}
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -105,9 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
-                      validator: (v) => (v == null || v.length < 6)
-                          ? 'Use at least 6 characters'
-                          : null,
+                      validator: passwordProblem,
                     ),
                     const SizedBox(height: 24),
                     FilledButton(

@@ -28,6 +28,12 @@ public class AiWorkflowsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
+    /// <summary>The calling traveler's own workflow runs, newest first.</summary>
+    [HttpGet("mine")]
+    [Authorize(Roles = "Traveler")]
+    public async Task<IActionResult> GetMine() =>
+        Ok(await _workflowService.GetMyWorkflowsAsync(CurrentUserId));
+
     /// <summary>Operator/Admin approval queue.</summary>
     [HttpGet("pending")]
     [Authorize(Roles = "Operator,Admin")]

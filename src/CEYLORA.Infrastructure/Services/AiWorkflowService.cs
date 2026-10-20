@@ -83,6 +83,18 @@ public class AiWorkflowService : IAiWorkflowService
         return workflow is null ? null : MapToDto(workflow);
     }
 
+    public async Task<List<AiWorkflowResponseDto>> GetMyWorkflowsAsync(Guid travelerId)
+    {
+        var workflows = await _db.AIWorkflows
+            .Include(w => w.Traveler)
+            .Include(w => w.Steps)
+            .Where(w => w.TravelerId == travelerId)
+            .OrderByDescending(w => w.CreatedAt)
+            .ToListAsync();
+
+        return workflows.Select(MapToDto).ToList();
+    }
+
     public async Task<List<AiWorkflowResponseDto>> GetPendingApprovalsAsync()
     {
         var workflows = await _db.AIWorkflows

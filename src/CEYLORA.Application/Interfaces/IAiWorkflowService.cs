@@ -15,6 +15,9 @@ public interface IAiWorkflowService
 
     Task<AiWorkflowResponseDto?> GetWorkflowAsync(Guid id);
 
+    /// <summary>A traveler's own runs, newest first (backs the mobile "My AI plans" list).</summary>
+    Task<List<AiWorkflowResponseDto>> GetMyWorkflowsAsync(Guid travelerId);
+
     /// <summary>Operator/Admin queue: workflows sitting in AwaitingApproval.</summary>
     Task<List<AiWorkflowResponseDto>> GetPendingApprovalsAsync();
 

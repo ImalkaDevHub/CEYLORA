@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Flutter Android debug manifest (INTERNET + cleartext for the local dev API) must be tracked
+!mobile/android/app/src/debug/

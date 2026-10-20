@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
-import 'screens/home_screen.dart';
+import 'providers/trips_provider.dart';
+import 'screens/main_shell.dart';
 import 'screens/login_screen.dart';
 import 'services/api_client.dart';
 import 'services/auth_service.dart';
 import 'services/token_storage.dart';
+import 'services/trip_service.dart';
 
 void main() {
   final api = ApiClient();
@@ -33,6 +35,14 @@ class CeyloraApp extends StatelessWidget {
             service: AuthService(api),
             store: store,
           )..restore(),
+        ),
+        // Rebuilt around the signed-in user: cached trips are dropped on sign-out.
+        ChangeNotifierProxyProvider<AuthProvider, TripsProvider>(
+          create: (_) => TripsProvider(TripService(api)),
+          update: (_, auth, trips) {
+            if (auth.status != AuthStatus.signedIn) trips!.clear();
+            return trips!;
+          },
         ),
       ],
       child: MaterialApp(
@@ -61,7 +71,7 @@ class _AuthGate extends StatelessWidget {
       case AuthStatus.signedOut:
         return const LoginScreen();
       case AuthStatus.signedIn:
-        return const HomeScreen();
+        return const MainShell();
     }
   }
 }

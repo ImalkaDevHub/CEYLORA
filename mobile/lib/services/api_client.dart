@@ -98,6 +98,8 @@ class ApiClient {
       final title = decoded['title'];
       if (title is String && title.isNotEmpty) return title;
     }
+    if (status == 403) return "You don't have permission to do that.";
+    if (status == 404) return 'Not found.';
     if (status >= 500) return 'Something went wrong on the server.';
     return 'Request failed ($status).';
   }

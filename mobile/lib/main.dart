@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
+import 'providers/destinations_provider.dart';
 import 'providers/trips_provider.dart';
 import 'screens/main_shell.dart';
 import 'screens/login_screen.dart';
 import 'services/api_client.dart';
 import 'services/auth_service.dart';
+import 'services/destination_service.dart';
 import 'services/token_storage.dart';
 import 'services/trip_service.dart';
 
@@ -42,6 +44,13 @@ class CeyloraApp extends StatelessWidget {
           update: (_, auth, trips) {
             if (auth.status != AuthStatus.signedIn) trips!.clear();
             return trips!;
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, DestinationsProvider>(
+          create: (_) => DestinationsProvider(DestinationService(api)),
+          update: (_, auth, destinations) {
+            if (auth.status != AuthStatus.signedIn) destinations!.clear();
+            return destinations!;
           },
         ),
       ],

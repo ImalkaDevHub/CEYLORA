@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/destinations_provider.dart';
 import '../providers/trips_provider.dart';
+import 'destinations_screen.dart';
 import 'home_screen.dart';
 import 'trips_screen.dart';
 
 /// Signed-in frame: app bar with sign-out and bottom navigation.
-/// More tabs (Destinations, AI planner) slot into [_tabs].
+/// More tabs (AI planner) slot into [_tabs].
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -20,6 +22,7 @@ class _MainShellState extends State<MainShell> {
 
   static const _tabs = <_Tab>[
     _Tab('Home', Icons.home_outlined, Icons.home, HomeScreen()),
+    _Tab('Explore', Icons.explore_outlined, Icons.explore, DestinationsScreen()),
     _Tab('My trips', Icons.luggage_outlined, Icons.luggage, TripsScreen()),
   ];
 
@@ -28,7 +31,9 @@ class _MainShellState extends State<MainShell> {
     super.initState();
     // Fetch after the first frame so the provider notifies outside of build.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<TripsProvider>().load();
+      if (!mounted) return;
+      context.read<TripsProvider>().load();
+      context.read<DestinationsProvider>().load();
     });
   }
 

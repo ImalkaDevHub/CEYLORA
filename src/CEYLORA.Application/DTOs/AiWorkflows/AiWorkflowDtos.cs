@@ -7,6 +7,12 @@ public class StartWorkflowDto
     public int Days { get; set; }
     public decimal Budget { get; set; }
     public List<string> Interests { get; set; } = new();
+
+    /// <summary>
+    /// Optional first day of the trip (calendar date). Defaults to tomorrow (UTC) when
+    /// omitted, so existing clients that don't send it keep working.
+    /// </summary>
+    public DateTime? StartDate { get; set; }
 }
 
 /// <summary>One agent's execution record — the observability trail for a run.</summary>

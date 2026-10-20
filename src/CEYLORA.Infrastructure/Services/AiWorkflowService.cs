@@ -38,9 +38,15 @@ public class AiWorkflowService : IAiWorkflowService
         var requiresApproval = aiResponse.RequiresApproval;
         var now = DateTime.UtcNow;
 
+        // Every run gets a Trip so the plan shows up in the traveler's trips. Its status
+        // follows the approval gate: Submitted while an operator must decide, Confirmed
+        // once validation passed with no gate, Draft when validation flagged problems.
+        var trip = CreateTripFor(travelerId, dto, aiResponse, requiresApproval, now);
+
         var workflow = new AIWorkflow
         {
             Id = Guid.NewGuid(),
+            TripId = trip.Id,
             TravelerId = travelerId,
             Goal = dto.Goal,
             Days = dto.Days,
@@ -71,6 +77,8 @@ public class AiWorkflowService : IAiWorkflowService
             });
         }
 
+        // Trip first: the workflow row references it through TripId.
+        _db.Trips.Add(trip);
         _db.AIWorkflows.Add(workflow);
         await _db.SaveChangesAsync(ct);
 
@@ -130,6 +138,20 @@ public class AiWorkflowService : IAiWorkflowService
         if (workflow is null) return null;
         if (workflow.ApprovalStatus != ApprovalStatus.AwaitingApproval) return null;
 
+        // The decision flows through to the traveler's trip: approval confirms it,
+        // rejection or a revision request cancels it (a revision starts a new workflow).
+        if (workflow.TripId is { } tripId)
+        {
+            var trip = await _db.Trips.FirstOrDefaultAsync(t => t.Id == tripId);
+            if (trip is not null && trip.Status == TripStatus.Submitted)
+            {
+                trip.Status = decision == ApprovalStatus.Approved
+                    ? TripStatus.Confirmed
+                    : TripStatus.Cancelled;
+                trip.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
         workflow.ApprovalStatus = decision;
         // ApprovedBy/ApprovedAt record who decided and when, for all three outcomes.
         workflow.ApprovedByUserId = operatorId;
@@ -139,6 +161,40 @@ public class AiWorkflowService : IAiWorkflowService
         await _db.SaveChangesAsync();
 
         return MapToDto(workflow);
+    }
+
+    private const int MaxTripTitleLength = 120;
+
+    private static Trip CreateTripFor(
+        Guid travelerId, StartWorkflowDto dto, AiPlanResponse ai, bool requiresApproval, DateTime now)
+    {
+        // Trip dates are calendar dates with no timezone: treat them as UTC midnight,
+        // the same rule TripService.CreateTripAsync applies.
+        var start = DateTime.SpecifyKind((dto.StartDate ?? now.AddDays(1)).Date, DateTimeKind.Utc);
+        var days = Math.Max(dto.Days, 1);
+
+        var title = dto.Goal.Trim();
+        if (title.Length > MaxTripTitleLength)
+            title = title[..(MaxTripTitleLength - 1)].TrimEnd() + "…";
+
+        var status = requiresApproval
+            ? TripStatus.Submitted
+            : string.Equals(ai.OverallStatus, "PASS", StringComparison.OrdinalIgnoreCase)
+                ? TripStatus.Confirmed
+                : TripStatus.Draft;
+
+        return new Trip
+        {
+            Id = Guid.NewGuid(),
+            TravelerId = travelerId,
+            Title = title,
+            StartDate = start,
+            EndDate = start.AddDays(days - 1),
+            Budget = dto.Budget,
+            Status = status,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
     }
 
     private Task<AIWorkflow?> LoadFullAsync(Guid id) =>

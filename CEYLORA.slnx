@@ -5,4 +5,7 @@
     <Project Path="src/CEYLORA.Domain/CEYLORA.Domain.csproj" />
     <Project Path="src/CEYLORA.Infrastructure/CEYLORA.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CEYLORA.Tests/CEYLORA.Tests.csproj" />
+  </Folder>
 </Solution>
